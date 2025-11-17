@@ -1,0 +1,22 @@
+---
+title: "LabAssigment3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+-   Problem 1 -
+
+-   Problem 2 -
+
+-   Problem 3 - Ivan
+
+# Lab 3: Parameter estimation and Unbiasedness of Estimators
+
+## Problem 1
+
+## Problem 2
+
+## Problem 3
