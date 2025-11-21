@@ -20,3 +20,67 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Problem 2
 
 ## Problem 3
+
+```{r}
+set.seed(42)
+mu <- 10
+sigma_squared <- 4
+sigma <- sqrt(sigma_squared)
+
+cat("Population Mean (mu):", mu, "\n")
+cat("Population Variance (sigma_squared):", sigma_squared, "\n")
+
+for (n in c(10, 50, 100, 1000)) {
+  cat("---------------------------------\n")
+  cat("----- Simulation for n =", n, "-----\n")
+  dataset <- rnorm(n, mean = mu, sd = sigma)
+  sample_mean <- mean(dataset)
+  
+  var_n <- sum((dataset - sample_mean) ^ 2) / n
+  var_n_minus1 <- var_n * n / (n - 1)
+  cat("Biased sample variance:", var_n, "\n")
+  cat("Bias:", -sigma_squared / n, "\n")
+  cat("Unbiased sample variance:", var_n_minus1, "\n")
+  cat("Bias:", 0, "\n")
+}
+```
+
+As $$n$$ increases the bias of the biased estimator $$\sigma_n^2$$ gets closer to zero. As we can see the bias is always negative, meaning it always slightly underestimates the true variance.
+
+Let's analize $$\sum(X_i - \bar{X})^2$$
+
+$$
+\sum_{i=1}^{n}(X_i - \bar{X})^2 = \sum_{i=1}^{n}((X_i - \mu) - (\bar{X} - \mu))^2 \\
+\Rightarrow \sum_{i=1}^{n}(X_i - \mu)^2 - 2 (\bar{X} - \mu) \sum_{i=1}^{n}(X_i - \mu) + \sum_{i=1}^{n} (\bar{X} - \mu)^2 \\
+\Rightarrow \sum_{i=1}^{n}(X_i - \mu)^2 -2n(\bar{X} - \mu)^2 + n(\bar{X} - \mu) ^ 2 \\
+\Rightarrow \sum_{i=1}^{n}(X_i - \mu)^2 -n(\bar{X} - \mu)^2
+$$
+
+Now take expectation from both sides
+
+$$
+E \left [ \sum_{i=1}^{n}(X_i - \bar{X})^2 \right] = E \left [\sum_{i=1}^{n}(X_i - \mu)^2 -n(\bar{X} - \mu)^2 \right ] \\
+= \sum_{i=1}^{n}\sigma^2 - n \frac{\sigma^2}{n} = n\sigma^2 - \sigma^2 = (n - 1)\sigma^2
+$$
+
+Now for $$E[\sigma_{n-1}^2]$$
+
+$$
+E[\sigma_{n-1}^2] = E \left [\frac{1}{n-1} \sum_{i=1}^{n}(X_i - \bar{X})^2 \right] = \frac{1}{n-1}(n-1)\sigma^2=\sigma^2
+$$
+
+Now for $$E[\sigma_{n}^2]$$
+
+$$
+E[\sigma_{n}^2] = E \left [\frac{1}{n} \sum_{i=1}^{n}(X_i - \bar{X})^2 \right] = \frac{1}{n}(n-1)\sigma^2 = \frac{n-1}{n}\sigma^2 = \sigma^2 - \frac{\sigma^2}{n}
+$$
+
+Since $$E[\sigma_{n-1}^2] = \sigma^2$$, therefore $$\sigma_{n-1}^2$$ is an unbiased estimator
+
+Since $$E[\sigma_{n}^2] = \sigma^2 - \frac{\sigma^2}{n} $$, therefore $$\sigma_{n}^2$$ is a biased estimator
+
+Comments on work:
+
+From theoretical calculations we saw, that $$\sigma_{n-1}^2$$ is an unbiased estimator.
+
+In practice when having large enough $$n$$ the difference between the estimators is negligible.
