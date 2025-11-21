@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 -   Problem 1 -
 
--   Problem 2 -
+-   Problem 2 - Olha
 
 -   Problem 3 - Ivan
 
@@ -18,5 +18,110 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Problem 1
 
 ## Problem 2
+In this task we study four different methods for constructing confidence intervals for the parameter 𝜃 of a Poisson distribution.
+
+Our goals are:
+To verify whether the confidence intervals of nominal level 1 − α contain the true parameter 𝜃 approximately 100(1 − α)% of the time.
+To compare the precision of these intervals (mean and maximum length).
+To identify which method works best for Poisson data.
+To study the effect of sample size n by considering n = 10, 30, 100; M = 10000 repetitions.
+
+To construct and evaluate the confidence intervals, we used the following sample statistics extracted from simulated Poisson data: sample mean, sample variance, confident intervals lengths and coverage probability.
+```{r}
+install.packages("rmarkdown")
+set.seed(6)
+theta <- 0.6
+alpha_vec <- c(0.1, 0.05, 0.01)
+
+simulate_once <- function(n, M, theta, alpha_vec){
+  # Generate values with Poisson(theta) distribution
+  x <- matrix(rpois(n*M, lambda = theta), nrow = n)
+  sample_mean <- colMeans(x)
+  sample_sd   <- apply(x, 2, sd)
+  
+  for (alpha in alpha_vec){
+    z <- qnorm(1 - alpha/2)
+    tcrit <- qt(1 - alpha/2, df = n - 1)
+    
+    #2: normal CI with known variance θ
+    se_known <- sqrt(theta / n)
+    lower2 <- sample_mean - z * se_known
+    upper2 <- sample_mean + z * se_known
+    cover2 <- mean(theta >= lower2 & theta <= upper2)
+    len2   <- mean(upper2 - lower2)   # довжина тут однакова, але беремо mean
+    
+    #3: solved quadratic inequality
+    # θ1,2 = (2n x̄ + z^2 ± sqrt(4 n z^2 x̄ + z^4)) / (2n)
+    disc <- sqrt(4 * n * z^2 * sample_mean + z^4)
+    lower3 <- (2 * n * sample_mean + z^2 - disc) / (2 * n)
+    upper3 <- (2 * n * sample_mean + z^2 + disc) / (2 * n)
+    
+    cover3 <- mean(theta >= lower3 & theta <= upper3)
+    len3_mean <- mean(upper3 - lower3)
+    len3_max  <- max(upper3 - lower3)
+    
+    #4: t-interval with sample sd
+    se_hat <- sample_sd / sqrt(n)
+    lower4 <- sample_mean - tcrit * se_hat
+    upper4 <- sample_mean + tcrit * se_hat
+    
+    cover4 <- mean(theta >= lower4 & theta <= upper4)
+    len4_mean <- mean(upper4 - lower4)
+    len4_max  <- max(upper4 - lower4)
+    
+    cat("n =", n, ", M =", M, ", alpha =", alpha, "\n")
+    cat("  Method (2) known var:   coverage =", cover2,
+        ", mean length =", len2, "\n")
+    cat("  Method (3) quadratic:   coverage =", cover3,
+        ", mean length =", len3_mean,
+        ", max length =", len3_max, "\n")
+    cat("  Method (4) t-interval:  coverage =", cover4,
+        ", mean length =", len4_mean,
+        ", max length =", len4_max, "\n\n")
+  }
+}
+
+n <- 30
+M <- 10000
+theta <- 0.6
+
+x <- rpois(M, theta)
+hist(x, breaks = 20, col = "skyblue",
+     main = "Distribution of single Poisson observations",
+     xlab = "X")
+
+means <- replicate(M, mean(rpois(n, theta)))
+hist(means, breaks = 30, col = "lightgreen",
+     main = "Distribution of sample mean",
+     xlab = "Sample mean")
+
+simulate_once(n = 10,  M = 10000, theta = theta, alpha_vec = alpha_vec)
+simulate_once(n = 30,  M = 10000, theta = theta, alpha_vec = alpha_vec)
+simulate_once(n = 100, M = 10000, theta = theta, alpha_vec = alpha_vec)
+```
+Before running the simulation, we visualized individual Poisson observations and distribution of the sample mean. This illustrates that although individual Poisson values are skewed, the sample mean becomes close to normal as n increases.
+
+#### Results for n = 10
+
+Method 2: coverage slightly below the nominal level
+Method 3: similar but slightly more variable
+Method 4: significant undercoverage (often around 0.85 instead of 0.95)
+For small samples, the Poisson distribution is highly skewed andnormal-based methods fail.
+The t-interval performs worst because the sample variance fluctuates strongly.
+
+#### Results for n = 30
+
+All methods have coverage close to the theoretical level
+Intervals become shorter and more stable
+Method 4 (t-interval) now works reasonably well
+CLT becomes accurate; normal approximations are reliable;
+differences between the methods decrease.
+
+#### Results for n = 100
+
+Coverage extremely close to 1 − α
+All interval lengths almost identical
+Maximum lengths no longer problematic
+For large n, all approximations are excellent and there is no practical difference between the methods.
 
 ## Problem 3
