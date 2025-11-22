@@ -7,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
--   Problem 1 -
+-   Problem 1 - Yarema
 
 -   Problem 2 -
 
@@ -16,6 +16,184 @@ knitr::opts_chunk$set(echo = TRUE)
 # Lab 3: Parameter estimation and Unbiasedness of Estimators
 
 ## Problem 1
+## Problem understanding:
+We need to verify that four different methods for constructing confidence intervals for the exponential distribution parameter θ = 1/λ achieve the nominal coverage probability (1-α) and compare their precision.
+```{r}
+id <- 6
+set.seed(id)
+theta <- id/10  
+lambda <- 1/theta
+alpha_values <- c(0.1, 0.05, 0.01)
+sample_sizes <- c(10, 30, 100)
+m <- 1000  
+```
+## Comment for 1 block:
+Sets initial parameters. theta = team_id/10, alpha levels for 90%, 95%, 99% CI, sample sizes to test, and m=1000 simulations for accuracy
+
+```{r}
+calculate_ci <- function(sample, alpha, method) {
+  n <- length(sample)
+  x_bar <- mean(sample)
+  
+  if (method == 1) {
+    lower <- (2 * n * x_bar) / qchisq(1 - alpha/2, df = 2*n)
+    upper <- (2 * n * x_bar) / qchisq(alpha/2, df = 2*n)
+  } else if (method == 2) {
+    z <- qnorm(1 - alpha/2)
+    lower <- x_bar - z * theta / sqrt(n)
+    upper <- x_bar + z * theta / sqrt(n)
+  } else if (method == 3) {
+    z <- qnorm(1 - alpha/2)
+    a <- 1 + (z^2)/n
+    b <- -2 * x_bar
+    c <- x_bar^2
+    discriminant <- b^2 - 4*a*c
+    
+    if (discriminant < 0) {
+      return(c(NA, NA, NA)) 
+    }
+    
+    lower <- (-b - sqrt(discriminant)) / (2*a)
+    upper <- (-b + sqrt(discriminant)) / (2*a)
+    
+    if (lower < 0 || upper < lower) {
+      return(c(NA, NA, NA))
+    }
+  } else if (method == 4) {
+    t_val <- qt(1 - alpha/2, df = n-1)
+    se <- sd(sample) / sqrt(n)
+    lower <- x_bar - t_val * se
+    upper <- x_bar + t_val * se
+  }
+  
+  return(c(lower, upper, upper - lower))
+}
+```
+## Comment for block 2:
+Implements all 4 CI methods. Method 1 uses exact χ² distribution. Method 2 uses normal approximation with theoretical variance. Method 3 solves inequality to eliminate unknown parameter. Method 4 uses t-distribution with sample standard error
+```{r}
+results <- list()
+
+for (alpha in alpha_values) {
+  for (n in sample_sizes) {
+    coverage <- numeric(4)
+    avg_length <- numeric(4)
+    
+    for (method in 1:4) {
+      coverage_count <- 0
+      total_length <- 0
+      valid_simulations <- 0
+      
+      for (i in 1:m) {
+        sample <- rexp(n, rate = lambda)
+        ci <- calculate_ci(sample, alpha, method)
+        
+        if (!any(is.na(ci))) {
+          if (ci[1] <= theta && theta <= ci[2]) {
+            coverage_count <- coverage_count + 1
+          }
+          total_length <- total_length + ci[3]
+          valid_simulations <- valid_simulations + 1
+        }
+      }
+      
+      if (valid_simulations > 0) {
+        coverage[method] <- coverage_count / valid_simulations
+        avg_length[method] <- total_length / valid_simulations
+      } else {
+        coverage[method] <- NA
+        avg_length[method] <- NA
+      }
+    }
+    
+    results[[paste("alpha", alpha, "n", n)]] <- list(
+      coverage = coverage,
+      avg_length = avg_length
+    )
+  }
+}
+```
+## Comment for block 3:
+Runs simulation for each alpha and sample size. For each method, generates m samples, computes CIs, tracks coverage rate and average interval length
+```{r}
+cat("SIMULATION RESULTS\n")
+cat("=================\n\n")
+
+for (alpha in alpha_values) {
+  for (n in sample_sizes) {
+    key <- paste("alpha", alpha, "n", n)
+    cat("Alpha =", alpha, ", n =", n, ", Theoretical Coverage =", 1-alpha, "\n")
+    cat("Method | Coverage | Avg Length\n")
+    for (method in 1:4) {
+      cat(sprintf("%6d | %8.3f | %10.3f\n", 
+                  method, 
+                  results[[key]]$coverage[method],
+                  results[[key]]$avg_length[method]))
+    }
+    cat("\n")
+  }
+}
+```
+## Comment for block 4:
+Displays results in clean table format showing empirical coverage probability and average interval length for each method
+```{r}
+library(ggplot2)
+
+plot_data <- data.frame()
+for (alpha in alpha_values) {
+  for (n in sample_sizes) {
+    key <- paste("alpha", alpha, "n", n)
+    for (method in 1:4) {
+      plot_data <- rbind(plot_data, 
+        data.frame(alpha = factor(alpha), n = n, method = factor(method), 
+                  coverage = results[[key]]$coverage[method],
+                  length = results[[key]]$avg_length[method]))
+    }
+  }
+}
+
+ggplot(plot_data, aes(x = factor(n), y = coverage, fill = method)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~alpha) +
+  geom_hline(aes(yintercept = 1-as.numeric(as.character(alpha))), 
+             linetype = "dashed", color = "red") +
+  labs(title = "Coverage Probabilities", x = "Sample Size", y = "Coverage")
+
+ggplot(plot_data, aes(x = factor(n), y = length, fill = method)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~alpha) +
+  labs(title = "Average CI Lengths", x = "Sample Size", y = "Length")
+```
+## Comment for block 5:
+Creates visualizations comparing coverage probabilities (with theoretical reference line) and interval lengths across methods and sample sizes.
+
+## Explanation of all 4 methods:
+- Method 1: Uses the exact distribution property that for exponential distribution, 2λnX̄ ∼ χ²(2n)
+
+- Method 2: Applies Central Limit Theorem - for large n, √n(X̄ - θ)/θ ≈ N(0,1)
+
+- Method 3: Solves the inequality to eliminate the unknown parameter θ
+
+- Method 4: Uses t-distribution which is appropriate when population variance is unknown
+
+## Conclusion:
+Based on the simulation results:
+
+Coverage accuracy: Method 1 (exact) consistently achieves coverage closest to the theoretical level across all sample sizes. Method 4 performs reasonably well, especially for larger samples.
+
+Precision: Methods 2 and 3 often produce shorter intervals but may undercover for small samples.
+
+Recommendation: Method 4 (t-distribution) is recommended as the best overall method because:
+
+- It provides good coverage accuracy
+
+- It doesn't require knowing the true variance
+
+- It works well for various sample sizes
+
+- It's widely applicable in practice
+
+The results are reliable due to the large number of simulations (m=1000), and they agree with common sense expectations that exact methods should perform best, but practical methods like t-distribution offer a good balance between accuracy and applicability.
 
 ## Problem 2
 
