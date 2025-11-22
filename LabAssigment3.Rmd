@@ -16,8 +16,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # Lab 3: Parameter estimation and Unbiasedness of Estimators
 
 ## Problem 1
+
 ## Problem understanding:
+
 We need to verify that four different methods for constructing confidence intervals for the exponential distribution parameter θ = 1/λ achieve the nominal coverage probability (1-α) and compare their precision.
+
 ```{r}
 id <- 6
 set.seed(id)
@@ -27,7 +30,9 @@ alpha_values <- c(0.1, 0.05, 0.01)
 sample_sizes <- c(10, 30, 100)
 m <- 1000  
 ```
+
 ## Comment for 1 block:
+
 Sets initial parameters. theta = team_id/10, alpha levels for 90%, 95%, 99% CI, sample sizes to test, and m=1000 simulations for accuracy
 
 ```{r}
@@ -69,8 +74,11 @@ calculate_ci <- function(sample, alpha, method) {
   return(c(lower, upper, upper - lower))
 }
 ```
+
 ## Comment for block 2:
+
 Implements all 4 CI methods. Method 1 uses exact χ² distribution. Method 2 uses normal approximation with theoretical variance. Method 3 solves inequality to eliminate unknown parameter. Method 4 uses t-distribution with sample standard error
+
 ```{r}
 results <- list()
 
@@ -113,8 +121,11 @@ for (alpha in alpha_values) {
   }
 }
 ```
+
 ## Comment for block 3:
+
 Runs simulation for each alpha and sample size. For each method, generates m samples, computes CIs, tracks coverage rate and average interval length
+
 ```{r}
 cat("SIMULATION RESULTS\n")
 cat("=================\n\n")
@@ -134,8 +145,11 @@ for (alpha in alpha_values) {
   }
 }
 ```
+
 ## Comment for block 4:
+
 Displays results in clean table format showing empirical coverage probability and average interval length for each method
+
 ```{r}
 library(ggplot2)
 
@@ -164,19 +178,23 @@ ggplot(plot_data, aes(x = factor(n), y = length, fill = method)) +
   facet_wrap(~alpha) +
   labs(title = "Average CI Lengths", x = "Sample Size", y = "Length")
 ```
+
 ## Comment for block 5:
+
 Creates visualizations comparing coverage probabilities (with theoretical reference line) and interval lengths across methods and sample sizes.
 
 ## Explanation of all 4 methods:
-- Method 1: Uses the exact distribution property that for exponential distribution, 2λnX̄ ∼ χ²(2n)
 
-- Method 2: Applies Central Limit Theorem - for large n, √n(X̄ - θ)/θ ≈ N(0,1)
+-   Method 1: Uses the exact distribution property that for exponential distribution, 2λnX̄ ∼ χ²(2n)
 
-- Method 3: Solves the inequality to eliminate the unknown parameter θ
+-   Method 2: Applies Central Limit Theorem - for large n, √n(X̄ - θ)/θ ≈ N(0,1)
 
-- Method 4: Uses t-distribution which is appropriate when population variance is unknown
+-   Method 3: Solves the inequality to eliminate the unknown parameter θ
+
+-   Method 4: Uses t-distribution which is appropriate when population variance is unknown
 
 ## Conclusion:
+
 Based on the simulation results:
 
 Coverage accuracy: Method 1 (exact) consistently achieves coverage closest to the theoretical level across all sample sizes. Method 4 performs reasonably well, especially for larger samples.
@@ -185,28 +203,25 @@ Precision: Methods 2 and 3 often produce shorter intervals but may undercover fo
 
 Recommendation: Method 4 (t-distribution) is recommended as the best overall method because:
 
-- It provides good coverage accuracy
+-   It provides good coverage accuracy
 
-- It doesn't require knowing the true variance
+-   It doesn't require knowing the true variance
 
-- It works well for various sample sizes
+-   It works well for various sample sizes
 
-- It's widely applicable in practice
+-   It's widely applicable in practice
 
 The results are reliable due to the large number of simulations (m=1000), and they agree with common sense expectations that exact methods should perform best, but practical methods like t-distribution offer a good balance between accuracy and applicability.
 
 ## Problem 2
+
 In this task we study four different methods for constructing confidence intervals for the parameter 𝜃 of a Poisson distribution.
 
-Our goals are:
-To verify whether the confidence intervals of nominal level 1 − α contain the true parameter 𝜃 approximately 100(1 − α)% of the time.
-To compare the precision of these intervals (mean and maximum length).
-To identify which method works best for Poisson data.
-To study the effect of sample size n by considering n = 10, 30, 100; M = 10000 repetitions.
+Our goals are: To verify whether the confidence intervals of nominal level 1 − α contain the true parameter 𝜃 approximately 100(1 − α)% of the time. To compare the precision of these intervals (mean and maximum length). To identify which method works best for Poisson data. To study the effect of sample size n by considering n = 10, 30, 100; M = 10000 repetitions.
 
 To construct and evaluate the confidence intervals, we used the following sample statistics extracted from simulated Poisson data: sample mean, sample variance, confident intervals lengths and coverage probability.
+
 ```{r}
-install.packages("rmarkdown")
 set.seed(6)
 theta <- 0.6
 alpha_vec <- c(0.1, 0.05, 0.01)
@@ -277,30 +292,20 @@ simulate_once(n = 10,  M = 10000, theta = theta, alpha_vec = alpha_vec)
 simulate_once(n = 30,  M = 10000, theta = theta, alpha_vec = alpha_vec)
 simulate_once(n = 100, M = 10000, theta = theta, alpha_vec = alpha_vec)
 ```
+
 Before running the simulation, we visualized individual Poisson observations and distribution of the sample mean. This illustrates that although individual Poisson values are skewed, the sample mean becomes close to normal as n increases.
 
 #### Results for n = 10
 
-Method 2: coverage slightly below the nominal level
-Method 3: similar but slightly more variable
-Method 4: significant undercoverage (often around 0.85 instead of 0.95)
-For small samples, the Poisson distribution is highly skewed andnormal-based methods fail.
-The t-interval performs worst because the sample variance fluctuates strongly.
+Method 2: coverage slightly below the nominal level Method 3: similar but slightly more variable Method 4: significant undercoverage (often around 0.85 instead of 0.95) For small samples, the Poisson distribution is highly skewed andnormal-based methods fail. The t-interval performs worst because the sample variance fluctuates strongly.
 
 #### Results for n = 30
 
-All methods have coverage close to the theoretical level
-Intervals become shorter and more stable
-Method 4 (t-interval) now works reasonably well
-CLT becomes accurate; normal approximations are reliable;
-differences between the methods decrease.
+All methods have coverage close to the theoretical level Intervals become shorter and more stable Method 4 (t-interval) now works reasonably well CLT becomes accurate; normal approximations are reliable; differences between the methods decrease.
 
 #### Results for n = 100
 
-Coverage extremely close to 1 − α
-All interval lengths almost identical
-Maximum lengths no longer problematic
-For large n, all approximations are excellent and there is no practical difference between the methods.
+Coverage extremely close to 1 − α All interval lengths almost identical Maximum lengths no longer problematic For large n, all approximations are excellent and there is no practical difference between the methods.
 
 ## Problem 3
 
